@@ -7,10 +7,15 @@ contract RPS is CommitReveal {
     struct Player {
         uint choice; // 0 - Rock, 1 - Paper , 2 - Scissors, 3 - undefined
         address addr;
+        uint time;
     }
     uint public numPlayer = 0;
     uint public numReveal = 0;
     uint public numCommit = 0;
+    uint public commitTimeP0;
+    uint public commitTimeP1;
+    uint public revealTimeP0;
+    uint public revealTimeP1;
     uint public reward = 0;
     mapping (uint => Player) public player;
     uint public numInput = 0;
@@ -21,6 +26,7 @@ contract RPS is CommitReveal {
         reward += msg.value;
         player[numPlayer].addr = msg.sender;
         player[numPlayer].choice = 3;
+        player[numPlayer].time = block.timestamp;
         numPlayer++;
     }
 
@@ -30,7 +36,34 @@ contract RPS is CommitReveal {
         require(choice == 0 || choice == 1 || choice == 2);
         player[idx].choice = choice;
         commit(getSaltedHash(bytes32(choice),bytes32(salt)));
+        if(idx==0){
+            commitTimeP0 = block.timestamp;
+        }else{
+            commitTimeP1 = block.timestamp;
+        }
         numCommit++;
+    }
+
+    function withdraw(uint idx) public {
+        address payable account = payable(player[idx].addr);
+        if(numPlayer == 1 ){
+            require((block.timestamp - player[idx].time) > 600 ,"not enough time 1");
+            account.transfer(reward);
+        }else if(numPlayer == 2 && numCommit==1){
+            if(idx == 0){
+                require((block.timestamp - commitTimeP0) > 300,"not enough time 2 ");
+            }else{
+                require((block.timestamp - commitTimeP1) > 300,"not enough time 3 ");
+            }
+            account.transfer(reward);
+        }else if(numPlayer == 2 && numReveal==1){
+            if(idx == 0){
+                require((block.timestamp - revealTimeP0) > 300,"not enough time 4 ");
+            }else{
+                require((block.timestamp - revealTimeP1) > 300,"not enough time 5 ");
+            }
+            account.transfer(reward);
+        }
     }
 
     function revealPlayer(uint choice, uint idx,uint salt) public {
@@ -40,6 +73,11 @@ contract RPS is CommitReveal {
         require(choice == 0 || choice == 1 || choice == 2);
         revealAnswer(bytes32(choice), bytes32(salt));
         numReveal++;
+        if(idx==0){
+            revealTimeP0 = block.timestamp;
+        }else{
+            revealTimeP1 = block.timestamp;
+        }
         if (numReveal == 2) {
             _checkWinnerAndPay();
         }
