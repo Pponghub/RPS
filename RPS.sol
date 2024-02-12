@@ -71,6 +71,7 @@ contract RPS is CommitReveal {
             }
             account.transfer(reward);
         }
+        _reset();
     }
 
     function revealPlayer(uint choice,uint salt) public {
@@ -114,5 +115,20 @@ contract RPS is CommitReveal {
             account0.transfer(reward / 2);
             account1.transfer(reward / 2);
         }
+        _reset();
+    }
+
+    function _reset() private {
+        numPlayer = 0;
+        numReveal = 0;
+        numCommit = 0;
+        commitTimeP0 = 0;
+        commitTimeP1 = 0;
+        revealTimeP0 = 0;
+        revealTimeP1 = 0;
+        reward = 0;
+        numInput = 0;
+        delete player[0];
+        delete player[1];
     }
 }
