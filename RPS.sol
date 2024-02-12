@@ -30,21 +30,28 @@ contract RPS is CommitReveal {
         numPlayer++;
     }
 
-    function input(uint choice, uint idx,uint salt) public  {
+    function input(uint choice,uint salt) public  {
         require(numPlayer == 2);
-        require(msg.sender == player[idx].addr);
         require(choice == 0 || choice == 1 || choice == 2);
-        player[idx].choice = choice;
-        commit(getSaltedHash(bytes32(choice),bytes32(salt)));
-        if(idx==0){
+        if(msg.sender == player[0].addr){
+            player[0].choice = choice;
+            commit(getSaltedHash(bytes32(choice),bytes32(salt)));
             commitTimeP0 = block.timestamp;
         }else{
+            player[1].choice = choice;
+            commit(getSaltedHash(bytes32(choice),bytes32(salt)));
             commitTimeP1 = block.timestamp;
         }
         numCommit++;
     }
 
-    function withdraw(uint idx) public {
+    function withdraw() public {
+        uint idx;
+        if(msg.sender == player[0].addr){
+            idx = 0;
+        }else{
+            idx = 1;
+        }
         address payable account = payable(player[idx].addr);
         if(numPlayer == 1 ){
             require((block.timestamp - player[idx].time) > 600 ,"not enough time 1");
@@ -66,7 +73,13 @@ contract RPS is CommitReveal {
         }
     }
 
-    function revealPlayer(uint choice, uint idx,uint salt) public {
+    function revealPlayer(uint choice,uint salt) public {
+        uint idx;
+        if(msg.sender == player[0].addr){
+            idx = 0;
+        }else{
+            idx = 1;
+        }
         require(numPlayer == 2);
         require(numCommit == 2);
         require(msg.sender == player[idx].addr);
