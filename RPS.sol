@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity >=0.7.0 <0.9.0;
 
-contract RPS {
+import "./CommitReveal.sol";
+
+contract RPS is CommitReveal {
     struct Player {
         uint choice; // 0 - Rock, 1 - Paper , 2 - Scissors, 3 - undefined
         address addr;
     }
     uint public numPlayer = 0;
+    uint public numReveal = 0;
+    uint public numCommit = 0;
     uint public reward = 0;
     mapping (uint => Player) public player;
     uint public numInput = 0;
@@ -21,13 +24,23 @@ contract RPS {
         numPlayer++;
     }
 
-    function input(uint choice, uint idx) public  {
+    function input(uint choice, uint idx,uint salt) public  {
         require(numPlayer == 2);
         require(msg.sender == player[idx].addr);
         require(choice == 0 || choice == 1 || choice == 2);
         player[idx].choice = choice;
-        numInput++;
-        if (numInput == 2) {
+        commit(getSaltedHash(bytes32(choice),bytes32(salt)));
+        numCommit++;
+    }
+
+    function revealPlayer(uint choice, uint idx,uint salt) public {
+        require(numPlayer == 2);
+        require(numCommit == 2);
+        require(msg.sender == player[idx].addr);
+        require(choice == 0 || choice == 1 || choice == 2);
+        revealAnswer(bytes32(choice), bytes32(salt));
+        numReveal++;
+        if (numReveal == 2) {
             _checkWinnerAndPay();
         }
     }
